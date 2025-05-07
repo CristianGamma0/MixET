@@ -1,48 +1,110 @@
-# little_alchemy_server.py
+# ----- server.py -----
 import socket
+import threading
 import json
-import os
+import time
+from game_logic import GameLogic
 
-HOST = 'localhost'
-PORT = 9999
+class GameServer:
+    def __init__(self, host='localhost', port=5000):
+        self.host = host
+        self.port = port
+        self.server_socket = None
+        self.clients = {}  # socket -> {"score": 0, "name": str}
+        self.lock = threading.Lock()
+        self.timer_started = False
+        self.client_counter = 1
 
-COMBINAZIONI_FILE = "combinazioni_server.json"
+    def start_server(self):
+        self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.server_socket.bind((self.host, self.port))
+        self.server_socket.listen(2)
+        print(f"Server listening on {self.host}:{self.port}")
 
-def carica_combinazioni():
-    if os.path.exists(COMBINAZIONI_FILE):
-        with open(COMBINAZIONI_FILE, "r") as f:
-            return json.load(f)
-    return {}
+        while True:
+            client_socket, addr = self.server_socket.accept()
+            print(f"Client connected from {addr}")
+            with self.lock:
+                name = f"Giocatore {self.client_counter}"
+                self.clients[client_socket] = {"score": 0, "name": name}
+                self.client_counter += 1
+                if not self.timer_started:
+                    self.timer_started = True
+                    self.start_timer()
 
-def salva_combinazioni(dati):
-    with open(COMBINAZIONI_FILE, "w") as f:
-        json.dump(dati, f)
+            threading.Thread(target=self.handle_client, args=(client_socket,), daemon=True).start()
 
-combinazioni = carica_combinazioni()
+    def handle_client(self, client_socket):
+        try:
+            while True:
+                data = client_socket.recv(1024).decode()
+                if not data:
+                    break
+                self.process_data(client_socket, data)
+        finally:
+            with self.lock:
+                if client_socket in self.clients:
+                    del self.clients[client_socket]
+            client_socket.close()
+            print("Client disconnected")
 
-server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server_socket.bind((HOST, PORT))
-server_socket.listen(1)
-print(f"🖥️ Server in ascolto su {HOST}:{PORT}")
+    def process_data(self, client_socket, data):
+        message = json.loads(data)
+        action = message.get("action")
 
-client_socket, addr = server_socket.accept()
-print(f"✅ Client connesso da {addr}")
+        if action == "combine":
+            elems = message["elements"]
+            result, points = GameLogic().combine_elements(elems[0], elems[1])
+            try:
+                client_socket.send(json.dumps({
+                    "action": "combination_result",
+                    "result": result,
+                    "points": points
+                }).encode())
+            except:
+                pass
+        elif action == "send_score":
+            score = message.get("score", 0)
+            with self.lock:
+                if client_socket in self.clients:
+                    self.clients[client_socket]["score"] = score
 
-try:
-    while True:
-        data = client_socket.recv(1024)
-        if not data:
-            break
-        msg = data.decode('utf-8')
-        print("Ricevuto:", msg)
+    def start_timer(self):
+        def run_timer():
+            total = 180 
+            while total >= 0:
+                mins, secs = divmod(total, 60)
+                self.broadcast({
+                    "action": "update_timer",
+                    "minutes": mins,
+                    "seconds": secs
+                })
+                time.sleep(1)
+                total -= 1
 
-        if msg in combinazioni:
-            nome, immagine = combinazioni[msg]
-            risposta = f"NEW:{nome}:{immagine}"
-        else:
-            risposta = "❌ Combinazione non valida."
-        client_socket.send(risposta.encode('utf-8'))
-finally:
-    client_socket.close()
-    server_socket.close()
-    salva_combinazioni(combinazioni)
+            self.broadcast({"action": "game_over"})
+
+            with self.lock:
+                results = {info["name"]: info["score"] for info in self.clients.values()}
+                winner = max(results.items(), key=lambda x: x[1])[0] if results else "Nessuno"
+                final_message = {
+                    "action": "final_results",
+                    "results": results,
+                    "winner": winner
+                }
+                self.broadcast(final_message)
+
+        threading.Thread(target=run_timer, daemon=True).start()
+
+    def broadcast(self, message):
+        data = json.dumps(message).encode()
+        with self.lock:
+            for c in list(self.clients):
+                try:
+                    c.send(data)
+                except:
+                    del self.clients[c]
+
+if __name__ == "__main__":
+    GameServer().start_server()
