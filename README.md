@@ -1,4 +1,4 @@
-# 🧪 Mixet
+# 🧪 MixET
 
 Un gioco multiplayer ispirato a *Little Alchemy*, sviluppato in Python. Ogni giocatore riceve elementi base e può combinarli per scoprire nuovi oggetti. Il gioco è interamente gestito con **socket TCP** e ha un'interfaccia realizzata con **DearPyGui**.
 
@@ -33,10 +33,6 @@ alchemy-multiplayer/
 ├── timer.py # Timer condiviso tra i client
 ├── README.md # Questo file
 
-yaml
-Copia
-Modifica
-
 ---
 
 ## 🚀 Come eseguirlo
@@ -46,19 +42,17 @@ Modifica
 ```bash
 git clone https://github.com/tuo-username/alchemy-multiplayer.git
 cd alchemy-multiplayer
-2. Installa le dipendenze
-bash
-Copia
-Modifica
+```
+###2. Installa le dipendenze
+```bash
 pip install dearpygui
-3. Avvia il server
-bash
-Copia
-Modifica
+```
+###3. Avvia il server
+```bash
 python server.py
-4. Avvia uno o più client (in terminali separati)
-bash
-Copia
-Modifica
+```
+###4. Avvia uno o più client (in terminali separati)
+```bash
 python client.py 5000
+```
 🔁 Assicurati che la porta sia la stessa sia nel client che nel server.
