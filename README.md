@@ -43,15 +43,15 @@ alchemy-multiplayer/
 git clone https://github.com/tuo-username/alchemy-multiplayer.git
 cd alchemy-multiplayer
 ```
-###2. Installa le dipendenze
+### 2. Installa le dipendenze
 ```bash
 pip install dearpygui
 ```
-###3. Avvia il server
+### 3. Avvia il server
 ```bash
 python server.py
 ```
-###4. Avvia uno o più client (in terminali separati)
+### 4. Avvia uno o più client (in terminali separati)
 ```bash
 python client.py 5000
 ```
