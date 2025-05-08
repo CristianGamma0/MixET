@@ -28,9 +28,13 @@ Un gioco multiplayer ispirato a *Little Alchemy*, sviluppato in Python. Ogni gio
 ## 🗂️ Struttura del progetto
 alchemy-multiplayer/
 ├── client.py # Client del gioco, GUI + logica di interazione
+
 ├── server.py # Server TCP che gestisce i client e il timer
+
 ├── game_logic.py # Gestione combinazioni e punteggio
+
 ├── timer.py # Timer condiviso tra i client
+
 ├── README.md # Questo file
 
 ---
