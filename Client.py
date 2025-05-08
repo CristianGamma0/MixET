@@ -66,6 +66,8 @@ class GameClient:
             points = message.get('points', 0)
             if result in self.discovered:
                 add_text(f"Oggetto '{result}' gia' scoperto! Nessun punto assegnato.", parent=self.results_area, color=[255,165,0])
+            elif result is None:
+                add_text(f"Combinazione non valida! Nessun punto assegnato.", parent=self.results_area, color=[255,0,0])
             else:
                 self.discovered.add(result)
                 self.score += points
